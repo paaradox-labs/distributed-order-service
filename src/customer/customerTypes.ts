@@ -13,3 +13,4 @@ export interface Customer {
     createdAt: Date
     updatedAt: Date
 }
+
