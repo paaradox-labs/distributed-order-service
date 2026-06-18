@@ -7,5 +7,6 @@ import { CouponController } from "./couponController.js"
 const router = express.Router()
 const couponController = new CouponController()
 router.post("/", authenticate, asyncWrapper(couponController.create))
+router.post("/verify", authenticate, asyncWrapper(couponController.verify))
 
 export default router;
