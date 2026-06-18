@@ -23,4 +23,26 @@ export class CustomerController {
         }
         res.json(customer)
     }
+
+    addAddress = async(req: Request, res: Response) => {
+        const {sub: userId} = req.auth
+
+        // todo: add service layer
+        const customer = await  customerModel.findOneAndUpdate({
+            _id: req.params.id,
+            userId
+        },{
+            $push:{
+                addresses: {
+                    text: req.body.address,
+                    // todo: implement this in future.
+                    isDefault: false
+                }
+            }
+        },{
+            returnDocument: "after"
+        })
+        // todo: add loggining, 
+        return res.json(customer)
+    }   
 }
