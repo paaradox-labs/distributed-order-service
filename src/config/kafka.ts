@@ -1,6 +1,7 @@
 import { Consumer, EachMessagePayload, Kafka } from "kafkajs"
 import { MessageBroker } from "../types/broker.js";
 import { handleProductUpdate } from "../productCache/productUpdateHandler.js";
+import { handleToppingUpdate } from "../toppingCache/toppingUpdateHandler.js";
 
 export class KafkaBroker implements MessageBroker {
     private consumer: Consumer
@@ -40,24 +41,23 @@ export class KafkaBroker implements MessageBroker {
 
         await this.consumer.run({
             eachMessage: async({topic, partition, message}: EachMessagePayload) => {
-                // Logic to handle incoming messages.
-
-                switch(topic) {
-                    case "product":
-                        await handleProductUpdate(message.value.toString())
-                        return
-                    default:
-                        console.log("Doing nothing");
-                }
-
+                // Just logging out the values for dev terminal
                 console.log({
                     value: message.value.toString(),
                     topic,
                     partition
                 });
-                
+                switch(topic) {
+                    case "product":
+                        await handleProductUpdate(message.value.toString())
+                        return
+                    case "topping":
+                        await handleToppingUpdate(message.value.toString())
+                        return
+                    default:
+                        console.log("Doing nothing");
+                }                
             }
         })
     }
-
 }
