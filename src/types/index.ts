@@ -15,3 +15,24 @@ export interface AuthRequest extends Request {
     email: string;
   };
 }
+
+export interface PriceConfiguration {
+         priceType:{
+        enum: ["base","aditional"]
+    },
+    availableOptions:{
+        type: object,
+        of: number
+    }
+    }
+
+export interface ProductPricingCache {
+    productId: string
+    priceConfiguration: PriceConfiguration
+}
+
+
+export interface ProductMessage {
+  id: string
+  priceConfiguration: PriceConfiguration
+}
