@@ -27,13 +27,19 @@ export class OrderController {
 
         // todo: store in db for each tenant based on their respective products 
         const TAXES_PERCENT = 18;
-
+        
         const taxes = Math.round((priceAfterDiscount * TAXES_PERCENT) / 100)
+        
+        // store in DB for each tenant or calculate based on business logics
+        const DELIVERY_CHARGES = 100
+        
+        const finalTotal = Math.round(priceAfterDiscount + taxes + DELIVERY_CHARGES)
         
         return res.json({
             totalPrice: totalPrice,
             discountAmount: discountAmount,
-            taxes: taxes
+            taxes: taxes,
+            finalTotal: finalTotal
         })
     }
 
