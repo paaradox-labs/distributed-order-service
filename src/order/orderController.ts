@@ -7,6 +7,8 @@ import couponModel from "../coupon/couponModel.js"
 import orderModel from "./orderModel.js"
 import { OrderStatus, PaymentStatus } from "./orderTypes.js"
 import idempotencyModel from "../idempotency/idempotencyModel.js"
+import createHttpError from "http-errors"
+import mongoose from "mongoose"
 
 export class OrderController {
     create = async (req: Request, res: Response, next: NextFunction) => {
@@ -42,38 +44,60 @@ export class OrderController {
         
         const finalTotal = Math.round(priceAfterDiscount + taxes + DELIVERY_CHARGES)
         
-        const idempotencyKey = req.headers["idempotency-key"]
+        const idempotencyKey = req.headers["idempotency-key"] as string
 
         const idempotency = await idempotencyModel.findOne({
             key: idempotencyKey
         })
 
-        // if(!idempotency){
+        let newOrder = idempotency ? [idempotency.response] : [];
 
-        // }
+        if(!idempotency){
+            const session = await mongoose.startSession();
+            await session.startTransaction();
+            
+            try {
+        newOrder = await orderModel.create(
+          [
+            {
+              cart,
+              address,
+              comment,
+              customerId,
+              deliveryCharges: DELIVERY_CHARGES,
+              discount: discountAmount,
+              taxes,
+              tenantId,
+              total: finalTotal,
+              paymentMode,
+              orderStatus: OrderStatus.RECEIVED,
+              paymentStatus: PaymentStatus.PENDING,
+            },
+          ],
+          { session },
+        );
 
-        // create an order
-        
-    const newOrder = await orderModel.create({
-      cart,
-      address,
-      comment,
-      customerId,
-      deliveryCharges: DELIVERY_CHARGES,
-      discount: discountAmount,
-      taxes,
-      tenantId,
-      total: finalTotal,
-      paymentMode,
-      orderStatus: OrderStatus.RECEIVED,
-      paymentStatus: PaymentStatus.PENDING,
-    });
+        await idempotencyModel.create(
+          [{ key: idempotencyKey, response: newOrder[0] }],
+          { session },
+        );
 
-    return res.json({ newOrder: newOrder });
+        await session.commitTransaction();
+      } catch (err) {
+        await session.abortTransaction();
+        await session.endSession();
 
-
+        return next(createHttpError(500, err.message));
+      } finally {
+        await session.endSession();
+      }
     }
 
+    // Payment flow here...
+
+    return res.json({ newOrder: newOrder });
+}
+        // create an order
     private calculateTotal = async (cart: CartItem[]) => {
         const productIds = cart.map(item => item._id)
 
