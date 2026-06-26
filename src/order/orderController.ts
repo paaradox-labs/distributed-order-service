@@ -1,15 +1,16 @@
 
-import { Request, Response } from "express"
+import { NextFunction, Request, Response } from "express"
 import { CartItem, ProductPricingCache, Topping, ToppingPriceCache } from "../types/index.js"
 import productCacheModel from "../productCache/productCacheModel.js"
 import toppingCacheModel from "../toppingCache/toppingCacheModel.js"
 import couponModel from "../coupon/couponModel.js"
 import orderModel from "./orderModel.js"
 import { OrderStatus, PaymentStatus } from "./orderTypes.js"
+import idempotencyModel from "../idempotency/idempotencyModel.js"
 
 export class OrderController {
-    create = async (req: Request, res: Response) => {
-        const {
+    create = async (req: Request, res: Response, next: NextFunction) => {
+    const {
       cart,
       couponCode,
       tenantId,
@@ -40,6 +41,16 @@ export class OrderController {
         const DELIVERY_CHARGES = 100
         
         const finalTotal = Math.round(priceAfterDiscount + taxes + DELIVERY_CHARGES)
+        
+        const idempotencyKey = req.headers["idempotency-key"]
+
+        const idempotency = await idempotencyModel.findOne({
+            key: idempotencyKey
+        })
+
+        // if(!idempotency){
+
+        // }
 
         // create an order
         
