@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { PaymentGW, PaymentOptions } from "./paymentTypes.js";
+import { CustomMetaData, PaymentGW, PaymentOptions, VerifiedSession } from "./paymentTypes.js";
 import config from "config"
 
 export class StripeGateway implements PaymentGW {
@@ -14,7 +14,7 @@ export class StripeGateway implements PaymentGW {
             // todo: get customer email from the db
             // customer_email: options.email ,
             metadata:{
-                ordeId: options.orderId,
+                orderId: options.orderId,
             },
             billing_address_collection: "required",
             // todo: In Future, Capture structure address from the customer
@@ -60,7 +60,14 @@ export class StripeGateway implements PaymentGW {
     };
     }
 
-    async getSession() {
-        return null
+    async getSession(id: string) {
+        const session = await this.stripe.checkout.sessions.retrieve(id)
+        const verifiedSession: VerifiedSession = {
+            id: session.id,
+            paymentStatus: session.payment_status,
+            metadata: session.metadata as unknown as CustomMetaData
+        }
+        
+        return verifiedSession
     }
 }
