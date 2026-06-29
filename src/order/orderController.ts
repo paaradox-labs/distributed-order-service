@@ -5,7 +5,7 @@ import productCacheModel from "../productCache/productCacheModel.js"
 import toppingCacheModel from "../toppingCache/toppingCacheModel.js"
 import couponModel from "../coupon/couponModel.js"
 import orderModel from "./orderModel.js"
-import { OrderStatus, PaymentStatus } from "./orderTypes.js"
+import { OrderStatus, PaymentMode, PaymentStatus } from "./orderTypes.js"
 import idempotencyModel from "../idempotency/idempotencyModel.js"
 import createHttpError from "http-errors"
 import mongoose from "mongoose"
@@ -98,7 +98,9 @@ export class OrderController {
     // Payment flow here...
     // todo: Error handling....
     // todo: Add logging...
-    const session = await this.paymentGw.createSession({
+
+    if (paymentMode === PaymentMode.CARD){
+        const session = await this.paymentGw.createSession({
         amount: finalTotal,
         orderId: newOrder[0]._id.toString(),
         tenantId: tenantId,
@@ -106,11 +108,16 @@ export class OrderController {
         idempotencyKey: idempotencyKey,
     })
 
-    // todo: Update Order Document -> paymentId -> sessionId
-
     return res.json({ 
         paymentUrl: session.paymentUrl
      });
+    }
+
+    // todo: Update Order Document -> paymentId -> sessionId
+    return res.json({
+        paymentUrl: null
+    })
+
 }
         // create an order
     private calculateTotal = async (cart: CartItem[]) => {
