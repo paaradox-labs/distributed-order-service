@@ -15,11 +15,11 @@ interface PaymentSession {
     paymentStatus: GatewayPaymentStatus
 }
 
-interface CustomMetaData {
+export interface CustomMetaData {
     orderId: string
 }
 
-interface VerifiedSession {
+export interface VerifiedSession {
     id: string
     metadata: CustomMetaData;
     paymentStatus: GatewayPaymentStatus
