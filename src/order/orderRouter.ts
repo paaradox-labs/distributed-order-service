@@ -4,10 +4,12 @@ import authenticate from "../common/middleware/authenticate.js"
 import { asyncWrapper } from "../utils.js"
 import { OrderController } from "./orderController.js"
 import { StripeGateway } from "../payment/stripe.js"
+import { createMessageBroker } from "../common/factories/brokerFactory.js"
 const router = express.Router()
 
 const paymentGw = new StripeGateway()
-const orderController = new OrderController(paymentGw)
+const broker = createMessageBroker()
+const orderController = new OrderController(paymentGw, broker)
 
 router.post("/", authenticate, asyncWrapper(orderController.create))
 

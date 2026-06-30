@@ -10,9 +10,10 @@ import idempotencyModel from "../idempotency/idempotencyModel.js"
 import createHttpError from "http-errors"
 import mongoose from "mongoose"
 import { PaymentGW } from "../payment/paymentTypes.js"
+import { MessageBroker } from "../types/broker.js"
 
 export class OrderController {
-    constructor (private paymentGw: PaymentGW){}
+    constructor (private paymentGw: PaymentGW, private broker: MessageBroker){}
     create = async (req: Request, res: Response, next: NextFunction) => {
     const {
       cart,
@@ -108,10 +109,14 @@ export class OrderController {
         idempotencyKey: idempotencyKey,
     })
 
+    await this.broker.sendMessage("order", JSON.stringify(newOrder))
+    
     return res.json({ 
         paymentUrl: session.paymentUrl
      });
     }
+
+    await this.broker.sendMessage("order", JSON.stringify(newOrder))
 
     // todo: Update Order Document -> paymentId -> sessionId
     return res.json({

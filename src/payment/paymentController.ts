@@ -2,12 +2,11 @@ import { Request, Response } from "express"
 import { PaymentGW } from "./paymentTypes.js"
 import orderModel from "../order/orderModel.js";
 import { PaymentStatus } from "../order/orderTypes.js";
+import { MessageBroker } from "../types/broker.js";
 
 export class PaymentController {
 
-    constructor(private paymentGw: PaymentGW){
-
-    }
+    constructor(private paymentGw: PaymentGW, private broker: MessageBroker){}
 
      handleWebhook = async(req: Request, res: Response) => {
         const webhookBody = req.body;
@@ -26,12 +25,13 @@ export class PaymentController {
                 paymentStatus: isPaymentSuccess ? PaymentStatus.PAID : PaymentStatus.FAILED,
             },
             {
-                returnDocument: "after"
+                new: true
             }
         )
         console.log(updatedOrder);
 
-        // todo: Send Update to Kafka Broker
+        // todo: Need to think about broker message failure.
+        await this.broker.sendMessage("order", JSON.stringify(updatedOrder))
     }        
 
         return res.json({
