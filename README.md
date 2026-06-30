@@ -1,4 +1,4 @@
-# Order Service
+# MERN Space - Order Service
 
 A microservice for managing orders within a distributed system. Part of the CGS distributed architecture.
 
