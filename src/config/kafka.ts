@@ -1,10 +1,11 @@
-import { Consumer, EachMessagePayload, Kafka } from "kafkajs"
+import { Consumer, EachMessagePayload, Kafka, Producer } from "kafkajs"
 import { MessageBroker } from "../types/broker.js";
 import { handleProductUpdate } from "../productCache/productUpdateHandler.js";
 import { handleToppingUpdate } from "../toppingCache/toppingUpdateHandler.js";
 
 export class KafkaBroker implements MessageBroker {
     private consumer: Consumer
+    private producer: Producer
 
     constructor(clientId: string, brokers: string[]){
         const kafka  = new Kafka({
@@ -12,24 +13,56 @@ export class KafkaBroker implements MessageBroker {
             brokers
         })
 
+        this.producer = kafka.producer({})
+
         this.consumer = kafka.consumer({
             groupId: clientId
         })
     }
         
     /**
-     *  Method to connect the consumer
+     *  Connect the Consumer
      */
     async connectConsumer(){
         await this.consumer.connect()
     }
 
     /**
-     * Disconnect the consumer 
+     * Connect the Producer
+     */
+    async connectProducer(){
+        await this.producer.connect()
+    }
+
+    /**
+     * Disconnect the Consumer 
      */
     async disconnectConsumer(){
         await this.consumer.disconnect()
     }
+
+     /**
+     * Disconnect the Producer
+     */
+    async disconnectProducer(){
+        if(this.producer){
+            await this.producer.disconnect()
+        }
+    }
+
+    /**
+   *
+   * @param topic - the topic to send the message to
+   * @param message - The message to send
+   * @throws {Error} - When the producer is not connected
+   */
+  async sendMessage(topic: string, message: string) {
+    await this.producer.send({
+      topic,
+      messages: [{ value: message }],
+    });
+  }
+
 
     async consumeMessage(topics: string[], fromBeginning: boolean = false){
         
