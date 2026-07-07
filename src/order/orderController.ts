@@ -1,5 +1,6 @@
 
 import { NextFunction, Request, Response } from "express"
+import { Request as AuthRequest} from "express-jwt"
 import { CartItem, ProductPricingCache, Topping, ToppingPriceCache } from "../types/index.js"
 import productCacheModel from "../productCache/productCacheModel.js"
 import toppingCacheModel from "../toppingCache/toppingCacheModel.js"
@@ -11,6 +12,7 @@ import createHttpError from "http-errors"
 import mongoose from "mongoose"
 import { PaymentGW } from "../payment/paymentTypes.js"
 import { MessageBroker } from "../types/broker.js"
+import customerModel from "../customer/customerModel.js"
 
 export class OrderController {
     constructor (private paymentGw: PaymentGW, private broker: MessageBroker){}
@@ -124,7 +126,33 @@ export class OrderController {
     })
 
 }
-        // create an order
+
+    getMine = async(req:AuthRequest, res: Response, next: NextFunction) => {
+        const userId = req.auth.sub
+
+        if(!userId){
+            return next(createHttpError(400, "No userId found."))
+        }
+
+        // todo: Add error handling 
+        const customer = await customerModel.findOne({userId})
+
+        if(!customer){
+            return next(createHttpError(400, "No customer found"))
+        }
+
+        // todo: implement pagination
+        const orders = await orderModel.find({
+            customerId: customer._id
+        },{
+            cart: 0
+        })
+
+        return res.json(orders)
+
+    }
+
+    // create an order
     private calculateTotal = async (cart: CartItem[]) => {
         const productIds = cart.map(item => item._id)
 
