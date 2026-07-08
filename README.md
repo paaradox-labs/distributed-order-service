@@ -9,6 +9,7 @@ A microservice for managing orders within a distributed system. Part of the CGS 
 - **Database:** MongoDB via Mongoose v9
 - **Auth:** JWT / RS256 (express-jwt + jwks-rsa)
 - **Messaging:** Apache Kafka via KafkaJS
+- **Payments:** Stripe (Checkout Sessions)
 - **Logging:** Winston
 - **Config:** node-config (YAML)
 
@@ -27,6 +28,12 @@ pnpm dev
 ```
 
 The server starts on port **5503** (development) or **5502** (production).
+
+> **Stripe webhook forwarding** — during development, run the Stripe CLI in a separate terminal to forward webhook events:
+> ```bash
+> stripe listen --forward-to localhost:5503/payments/webhook
+> ```
+> This forwards Stripe events (e.g., `checkout.session.completed`) to the local webhook endpoint.
 
 ## Scripts
 
@@ -53,6 +60,7 @@ The server starts on port **5503** (development) or **5502** (production).
 │   ├── customer/              # Customer profile & addresses
 │   ├── idempotency/           # Idempotency model (TTL-backed)
 │   ├── order/                 # Order creation & types
+│   ├── payment/               # Stripe payment gateway & webhook handling
 │   ├── productCache/          # Cached product pricing (populated via Kafka)
 │   ├── toppingCache/          # Cached topping pricing (populated via Kafka)
 │   └── types/                 # Shared TypeScript interfaces
@@ -168,6 +176,31 @@ The service subscribes to `product` and `topping` Kafka topics to maintain local
 | `topping` | `handleToppingUpdate` | Updates `toppingCache` collection |
 
 The consumer uses the group ID `order-service` and connects to the broker configured in `kafka.broker`.
+
+## Stripe Integration
+
+The service uses Stripe Checkout Sessions for card payments. When `paymentMode` is `"card"`, a Checkout Session is created and the payment URL is returned to the client.
+
+| Endpoint | Event | Action |
+|---|---|---|
+| `POST /payments/webhook` | `checkout.session.completed` | Updates order `paymentStatus` to `paid` or `failed` |
+
+### Development Setup
+
+1. Install the [Stripe CLI](https://stripe.com/docs/stripe-cli)
+2. Forward webhook events to your local server:
+   ```bash
+   stripe listen --forward-to localhost:5503/payments/webhook
+   ```
+3. The webhook endpoint is unauthenticated (uses Stripe's webhook signing secret — configure via `stripe.webhookSecret` in your config).
+
+### Configuration
+
+| Key | Description |
+|---|---|
+| `stripe.secretKey` | Stripe secret key (set per environment) |
+| `stripe.webhookSecret` | Stripe webhook signing secret (optional, for signature verification) |
+| `frontend.clientUI` | Frontend URL for success/cancel redirect |
 
 ## Error Format
 
