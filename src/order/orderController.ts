@@ -154,11 +154,17 @@ export class OrderController {
     getSingle = async(req: AuthRequest, res: Response, next: NextFunction ) => {
         const orderId = req.params.orderId
         const {sub: userId, role, tenant: tenantId} = req.auth;
-        console.log("userId", userId, "role: ", role, "tenant", tenantId);
+
+        const fields = req.query.fields ? req.query.fields.toString().split(",") : []
+
+        const projection = fields.reduce((acc, field) => {
+            acc[field] = 1;
+            return acc
+        },{})
 
         const order = await orderModel.findOne({
             _id: orderId
-        })
+        }, projection)
 
         if(!order){
             return next(createHttpError(400, "Order does not exists."))
@@ -177,7 +183,6 @@ export class OrderController {
 
         if(role === "customer"){
             const customer = await customerModel.findOne({userId})
-             console.log("customer", customer);
 
             if(!customer){
                 return next(createHttpError(400, "No customer found"))
