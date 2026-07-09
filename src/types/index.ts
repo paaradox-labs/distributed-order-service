@@ -53,6 +53,12 @@ export interface ToppingMessage {
   id: string;
   price: number;
   tenantId: string;
+  event_type: ToppingEvents;
+  data: {
+    id: string;
+    price: number;
+    tenantId: string;
+  };
 }
 
 export interface ProductPriceConfiguration {
@@ -101,4 +107,11 @@ export enum ProductEvents {
   PRODUCT_CREATE = "PRODUCT_CREATE",
   PRODUCT_UPDATE = "PRODUCT_UPDATE",
   PRODUCT_DELETE = "PRODUCT_DELETE",
+}
+
+
+export enum ToppingEvents {
+  TOPPING_CREATE = "TOPPING_CREATE",
+  TOPPING_UPDATE = "TOPPING_UPDATE",
+  TOPPING_DELETE = "TOPPING_DELETE",
 }
