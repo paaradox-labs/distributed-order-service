@@ -6,7 +6,7 @@ import productCacheModel from "../productCache/productCacheModel.js"
 import toppingCacheModel from "../toppingCache/toppingCacheModel.js"
 import couponModel from "../coupon/couponModel.js"
 import orderModel from "./orderModel.js"
-import { OrderStatus, PaymentMode, PaymentStatus } from "./orderTypes.js"
+import { OrderEvents, OrderStatus, PaymentMode, PaymentStatus } from "./orderTypes.js"
 import idempotencyModel from "../idempotency/idempotencyModel.js"
 import createHttpError from "http-errors"
 import mongoose from "mongoose"
@@ -111,7 +111,12 @@ export class OrderController {
         idempotencyKey: idempotencyKey,
     })
 
-    await this.broker.sendMessage("order", JSON.stringify(newOrder))
+    const brokerMessage = {
+        event_type: OrderEvents.ORDER_CREATE,
+        data: newOrder[0],
+    }
+
+    await this.broker.sendMessage("order", JSON.stringify(brokerMessage), newOrder[0]._id)
     
     return res.json({ 
         paymentUrl: session.paymentUrl
