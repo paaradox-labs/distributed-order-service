@@ -6,11 +6,11 @@ export const handleProductUpdate = async(value: string) => {
     const product: ProductMessage = JSON.parse(value)
 
     return await productCacheModel.updateOne({
-        productId: product.id,
+        productId: product.data.id,
     },
     {
         $set:{
-            priceConfiguration: product.priceConfiguration
+            priceConfiguration: product.data.priceConfiguration
         }
     },{
         upsert: true
