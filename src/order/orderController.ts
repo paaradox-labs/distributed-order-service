@@ -102,9 +102,13 @@ export class OrderController {
     // todo: Error handling....
     // todo: Add logging...
 
+    const customer = await customerModel.findOne({
+      _id: newOrder[0].customerId,
+    });
+
     const brokerMessage = {
     event_type: OrderEvents.ORDER_CREATE,
-    data: newOrder[0],
+    data: { ...newOrder[0], customerId: customer },
     }
 
     if (paymentMode === PaymentMode.CARD){
@@ -260,9 +264,14 @@ export class OrderController {
         { new: true },
       );
 
+      const customer = await customerModel.findOne({
+        _id: updatedOrder.customerId,
+      });
+
+      // todo: Add logging
       const brokerMessage = {
             event_type: OrderEvents.ORDER_STATUS_UPDATE,
-            data: updatedOrder,
+            data: { ...updatedOrder.toObject(), customerId: customer },
     }
 
         await this.broker.sendMessage("order", JSON.stringify(brokerMessage), updatedOrder._id.toString())
