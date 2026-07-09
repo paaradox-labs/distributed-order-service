@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { PaymentGW } from "./paymentTypes.js"
 import orderModel from "../order/orderModel.js";
-import { PaymentStatus } from "../order/orderTypes.js";
+import { OrderEvents, PaymentStatus } from "../order/orderTypes.js";
 import { MessageBroker } from "../types/broker.js";
 
 export class PaymentController {
@@ -31,7 +31,15 @@ export class PaymentController {
         console.log(updatedOrder);
 
         // todo: Need to think about broker message failure.
-        await this.broker.sendMessage("order", JSON.stringify(updatedOrder))
+
+
+            const brokerMessage = {
+            event_type: OrderEvents.PAYMENT_STATUS_UPDATE,
+            data: updatedOrder,
+            }
+        
+
+        await this.broker.sendMessage("order", JSON.stringify(brokerMessage), updatedOrder._id.toString())
     }        
 
         return res.json({
