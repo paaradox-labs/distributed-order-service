@@ -3,6 +3,7 @@ import { PaymentGW } from "./paymentTypes.js"
 import orderModel from "../order/orderModel.js";
 import { OrderEvents, PaymentStatus } from "../order/orderTypes.js";
 import { MessageBroker } from "../types/broker.js";
+import customerModel from "../customer/customerModel.js";
 
 export class PaymentController {
 
@@ -32,11 +33,17 @@ export class PaymentController {
 
         // todo: Need to think about broker message failure.
 
+            const customer = await customerModel.findOne({
+            _id: updatedOrder.customerId,
+            });
 
             const brokerMessage = {
             event_type: OrderEvents.PAYMENT_STATUS_UPDATE,
-            data: updatedOrder,
-            }
+            data: {
+            ...updatedOrder.toObject(),
+            customerId: customer,
+            },
+        }
         
 
         await this.broker.sendMessage("order", JSON.stringify(brokerMessage), updatedOrder._id.toString())
