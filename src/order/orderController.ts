@@ -1,7 +1,7 @@
 
 import { NextFunction, Request, Response } from "express"
 import { Request as AuthRequest} from "express-jwt"
-import { CartItem, ProductPricingCache, Topping, ToppingPriceCache } from "../types/index.js"
+import { CartItem, ProductPricingCache, ROLES, Topping, ToppingPriceCache } from "../types/index.js"
 import productCacheModel from "../productCache/productCacheModel.js"
 import toppingCacheModel from "../toppingCache/toppingCacheModel.js"
 import couponModel from "../coupon/couponModel.js"
@@ -127,6 +127,39 @@ export class OrderController {
 
 }
 
+    getAll = async(req: AuthRequest, res: Response, next: NextFunction) => {
+        const {role, tenant: userTenantId} = req.auth
+
+        const tenantId = req.query.tenantId
+
+        if(role === ROLES.CUSTOMER){
+            return next(createHttpError(403, "Not allowed."))
+        }
+
+        if(role === ROLES.ADMIN){
+            const filter = {}
+            if(tenantId) filter["tenantId"] = tenantId
+            
+            // todo: VERY IMP: add pagination.
+            
+            const orders = await orderModel.find(filter,{},{sort: {createdAt: -1}}).populate("customerId").exec()
+
+            // todo: Add logger
+            return res.json(orders)
+        }
+
+        if(role === ROLES.MANAGER){
+            // todo: Add Pagination
+            const orders = await orderModel.find({
+                tenantId: userTenantId,
+            },{},{sort: {createdAt: -1}}).populate("customerId").exec()
+
+            return res.json(orders)
+        }
+
+        return next(createHttpError(403, "Not allowed."))
+    }
+
     getMine = async(req:AuthRequest, res: Response, next: NextFunction) => {
         const userId = req.auth.sub
 
@@ -175,15 +208,15 @@ export class OrderController {
         // Which roles can access this endpoint: Admins, Manager (for their own restaurant), customr (for their own order only)
         const myRestaurantOrder = order.tenantId === tenantId
         
-        if(role === "admin"){
+        if(role === ROLES.ADMIN){
             return res.json(order)
         }
         
-        if(role === "manager" && myRestaurantOrder){
+        if(role === ROLES.MANAGER && myRestaurantOrder){
             return res.json(order)
         }
 
-        if(role === "customer"){
+        if(role === ROLES.CUSTOMER){
             const customer = await customerModel.findOne({userId})
 
             if(!customer){
