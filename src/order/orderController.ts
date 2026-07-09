@@ -193,7 +193,7 @@ export class OrderController {
         const projection = fields.reduce((acc, field) => {
             acc[field] = 1;
             return acc
-        },{customerId: 1})
+        },{customerId: 1, tenantId: 1})
 
         const order = await orderModel.findOne({
             _id: orderId
@@ -206,7 +206,7 @@ export class OrderController {
         }
 
         // Which roles can access this endpoint: Admins, Manager (for their own restaurant), customr (for their own order only)
-        const myRestaurantOrder = order.tenantId === tenantId
+        const myRestaurantOrder = String(order.tenantId) === String(tenantId)
         
         if(role === ROLES.ADMIN){
             return res.json(order)
