@@ -202,6 +202,76 @@ The service uses Stripe Checkout Sessions for card payments. When `paymentMode` 
 | `stripe.webhookSecret` | Stripe webhook signing secret (optional, for signature verification) |
 | `frontend.clientUI` | Frontend URL for success/cancel redirect |
 
+### List Orders
+
+```
+GET /orders
+```
+
+Returns orders based on the caller's role. Requires authentication.
+
+| Role | Behavior |
+|---|---|
+| `admin` | Returns all orders. Optional `?tenantId=` filter to scope to a specific restaurant |
+| `manager` | Returns only orders belonging to the manager's restaurant (based on JWT `tenant` claim) |
+| `customer` | Forbidden (403) |
+
+### Get Single Order
+
+```
+GET /orders/:orderId
+```
+
+Returns a single order if the caller is authorized.
+
+| Role | Behavior |
+|---|---|
+| `admin` | Returns any order |
+| `manager` | Returns only orders belonging to their restaurant |
+| `customer` | Returns only their own orders |
+
+**Optional query parameters:**
+
+| Param | Description |
+|---|---|
+| `fields` | Comma-separated list of fields to include in the response (e.g., `?fields=orderStatus,paymentStatus`). Defaults to all fields |
+
+### Get My Orders (Customer)
+
+```
+GET /orders/mine
+```
+
+Returns the authenticated customer's orders. Only accessible by customers.
+
+### Update Order Status
+
+```
+PATCH /orders/:orderId/status
+```
+
+Updates the order status. Accessible by `admin` and `manager` roles.
+
+**Request body:**
+
+| Field | Type | Description |
+|---|---|---|
+| `status` | `string` | New status (`received`, `confirmed`, `prepared`, `out_for_deliver`, `delivered`) |
+
+## Role-Based Access
+
+The service uses a `ROLES` enum imported from `src/types/index.ts`:
+
+```typescript
+export enum ROLES {
+  ADMIN = "admin",
+  CUSTOMER = "customer",
+  MANAGER = "manager",
+}
+```
+
+Role checks are performed using JWT claims set by the auth service during login. The `tenant` claim in the JWT is used to scope manager access to their restaurant's data.
+
 ## Error Format
 
 All errors are returned in a consistent format:
