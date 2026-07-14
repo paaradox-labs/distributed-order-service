@@ -5,8 +5,15 @@ import customerRouter from "./customer/customerRouter.js"
 import couponRouter from "./coupon/couponRouter.js"
 import orderRouter from "./order/orderRouter.js"
 import paymentRouter from "./payment/paymentRouter.js"
+import cors from "cors"
+import config from "config"
 
 const app = express();
+const ALLOWED_DOMAINS = [config.get("frontend.clientUI"), config.get("frontend.adminUI")]
+
+app.use(cors({
+  origin: ALLOWED_DOMAINS as string[]
+}))
 app.use(cookieParser());
 app.use(express.json());
 
