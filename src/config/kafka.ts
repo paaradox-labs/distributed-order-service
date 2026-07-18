@@ -1,20 +1,35 @@
-import { Consumer, EachMessagePayload, Kafka, Producer } from "kafkajs"
+import { Consumer, EachMessagePayload, Kafka, KafkaConfig, Producer } from "kafkajs"
 import { MessageBroker } from "../types/broker.js";
 import { handleProductUpdate } from "../productCache/productUpdateHandler.js";
 import { handleToppingUpdate } from "../toppingCache/toppingUpdateHandler.js";
+import config from "config";
 
 export class KafkaBroker implements MessageBroker {
     private consumer: Consumer
     private producer: Producer
 
     constructor(clientId: string, brokers: string[]){
-        const kafka  = new Kafka({
+        let kafkaConfig: KafkaConfig  = ({
             clientId,
             brokers
         })
 
-        this.producer = kafka.producer({})
+        if(process.env.NODE_ENV === "production"){
+            kafkaConfig = {
+                ...kafkaConfig,
+                ssl: true,
+                connectionTimeout: 45000,
+                sasl:{
+                    mechanism: "plain",
+                    username: config.get("kafka.sasl.username"),
+                    password: config.get("kafka.sasl.password")
+                }
+            }
+        }
 
+        const kafka = new Kafka(kafkaConfig);
+
+        this.producer = kafka.producer({})
         this.consumer = kafka.consumer({
             groupId: clientId
         })
