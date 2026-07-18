@@ -29,6 +29,8 @@ jobs:
 
             - name: Install dependencies
               run: pnpm install --frozen-lockfile --ignore-scripts
+            - name: Run eslint
+              run: pnpm run lint
             - name: Build-ts
               run: pnpm run build
 
