@@ -3,7 +3,7 @@ import couponModel from "./couponModel.js"
 import createHttpError from "http-errors"
 
 export class CouponController {
-    getAll = async(req: Request, res: Response, next: NextFunction) => {
+    getAll = async(req: Request, res: Response) => {
         const {perPage, currentPage, q, tenantId} = req.query
 
         const query: Record<string, unknown> = {}
