@@ -6,7 +6,7 @@ RUN corepack enable && corepack prepare pnpm@11 --activate
 
 WORKDIR /home/node/app
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 RUN pnpm install --frozen-lockfile
 
@@ -27,7 +27,7 @@ WORKDIR /home/node/app
 
 ENV NODE_ENV=production
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
