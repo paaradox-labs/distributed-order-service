@@ -2,23 +2,22 @@ ARG NODE_VERSION=24.18.0
 
 FROM node:${NODE_VERSION}-alpine as builder
 
+RUN corepack enable && corepack prepare pnpm@11 --activate
 
 WORKDIR /home/node/app
 
+COPY package.json pnpm-lock.yaml ./
 
-RUN --mount=type=bind,source=package.json,target=package.json \
-    --mount=type=bind,source=package-lock.json,target=package-lock.json \
-    --mount=type=cache,target=/root/.npm \
-    npm ci
-
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-
-RUN npm run build
+RUN pnpm run build
 
 
 FROM node:${NODE_VERSION}-alpine as runner
+
+RUN corepack enable && corepack prepare pnpm@11 --activate
 
 USER node
 
@@ -28,16 +27,12 @@ WORKDIR /home/node/app
 
 ENV NODE_ENV=production
 
-RUN --mount=type=bind,source=package.json,target=package.json \
-    --mount=type=bind,source=package-lock.json,target=package-lock.json \
-    --mount=type=cache,target=/root/.npm \
-    npm ci --omit=dev --ignore-scripts
+COPY package.json pnpm-lock.yaml ./
 
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
 COPY --from=builder --chown=node:node /home/node/app/dist ./
 
-EXPOSE 5501
-
-
+EXPOSE 5503
 
 CMD ["node", "server.js"]
