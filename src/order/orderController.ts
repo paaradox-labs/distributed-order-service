@@ -170,17 +170,23 @@ export class OrderController {
     }
 
     getMine = async(req:AuthRequest, res: Response, next: NextFunction) => {
-        const userId = req.auth.sub
+        const {sub: userId, firstName, lastName, email} = req.auth
 
         if(!userId){
             return next(createHttpError(400, "No userId found."))
         }
 
         // todo: Add error handling 
-        const customer = await customerModel.findOne({userId})
+        let customer = await customerModel.findOne({userId})
 
         if(!customer){
-            return next(createHttpError(400, "No customer found"))
+            customer = await customerModel.create({
+                userId, 
+                firstName, 
+                lastName, 
+                email,
+                addresses: []
+            })
         }
 
         // todo: implement pagination
